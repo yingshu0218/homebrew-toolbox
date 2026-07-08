@@ -1,9 +1,9 @@
 class Toolbox < Formula
   desc "个人工具箱集合 — 文档转换/EPUB/网络检测 (Flask 多工具整合)"
   homepage "https://github.com/yingshu0218/toolbox"
-  url "https://github.com/yingshu0218/toolbox/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "d06c144036b8c901a8b51ffea8bf563ec657d20954fdbef5aa811b379e3daec4"
-  version "1.0.0"
+  url "https://github.com/yingshu0218/toolbox/archive/refs/tags/v1.0.1.tar.gz"
+  sha256 "e71efb5b265c9e046708f92c1b6346af78ea6c402c3f1a1baeb3824eabae6653"
+  version "1.0.1"
   license "MIT"
   head "https://github.com/yingshu0218/toolbox.git", branch: "main"
 
