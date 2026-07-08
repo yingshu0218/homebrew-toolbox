@@ -21,6 +21,7 @@ class Toolbox < Formula
       command -v "$PY" >/dev/null 2>&1 || PY="python3"
       ROOT="#{libexec}"
       PORT="#{port}"
+      export TOOLBOX_PORT="$PORT"
       export PYTHONPATH="$ROOT/site-packages"
       if ! "$PY" -c "import flask" 2>/dev/null; then
         echo "首次运行，安装 Python 依赖 (flask pillow)..."
