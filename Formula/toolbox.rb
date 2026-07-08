@@ -21,24 +21,37 @@ class Toolbox < Formula
       command -v "$PY" >/dev/null 2>&1 || PY="python3"
       ROOT="#{libexec}"
       PORT="#{port}"
+      PID_FILE="$ROOT/toolbox.pid"
+      LOG_FILE="/tmp/toolbox.log"
       export TOOLBOX_PORT="$PORT"
       export PYTHONPATH="$ROOT/site-packages"
+      if [ "${1:-}" = "stop" ]; then
+        [ -f "$PID_FILE" ] && kill "$(cat "$PID_FILE")" 2>/dev/null
+        rm -f "$PID_FILE"; echo "Toolbox 已停止"; exit 0
+      fi
+      if [ "${1:-}" = "status" ]; then
+        if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+          echo "运行中 (PID: $(cat "$PID_FILE")) → http://localhost:${PORT}"
+        else echo "未运行"; fi; exit 0
+      fi
+      if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+        echo "已在运行 → http://localhost:${PORT}"
+        open "http://localhost:${PORT}/" 2>/dev/null; exit 0
+      fi
       if ! "$PY" -c "import flask" 2>/dev/null; then
         echo "首次运行，安装 Python 依赖 (flask pillow)..."
         "$PY" -m pip install --no-cache-dir --target "$ROOT/site-packages" flask pillow \\
           || { echo "依赖安装失败，请检查网络后重试 toolbox"; exit 1; }
-        echo "依赖安装完成"
       fi
       echo "Toolbox 启动中 → http://localhost:${PORT}"
-      "$PY" "$ROOT/home/server.py" &
-      PID=$!
+      nohup "$PY" "$ROOT/home/server.py" >"$LOG_FILE" 2>&1 &
+      echo $! > "$PID_FILE"
+      echo "PID: $(cat "$PID_FILE") | 日志: $LOG_FILE | 停止: toolbox stop"
       for i in $(seq 1 60); do
         curl -sf "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 && \\
           { open "http://localhost:${PORT}/" 2>/dev/null || true; } && break
         sleep 0.5
       done
-      trap 'kill $PID 2>/dev/null' EXIT INT TERM
-      wait $PID
     EOS
     chmod 0755, bin/"toolbox"
   end
@@ -48,7 +61,9 @@ class Toolbox < Formula
     <<~EOS
       Toolbox 已安装！
 
-        运行:  toolbox
+        运行:  toolbox          (后台启动, 关闭终端不影响)
+        停止:  toolbox stop
+        状态:  toolbox status
         访问:  http://localhost:#{port}
 
       首次运行会自动安装 Python 依赖 (flask/pillow)，需网络。
