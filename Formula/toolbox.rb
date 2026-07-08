@@ -1,4 +1,6 @@
 class Toolbox < Formula
+  include Language::Python::Virtualenv
+
   desc "个人工具箱集合 — 文档转换/EPUB/网络检测 (Flask 多工具整合)"
   homepage "https://github.com/yingshu0218/toolbox"
   url "https://github.com/yingshu0218/toolbox/archive/refs/tags/v1.0.0.tar.gz"
@@ -11,6 +13,7 @@ class Toolbox < Formula
   depends_on "pandoc"
 
   def install
+    port = ENV["TOOLBOX_PORT"] || "9053"
     libexec.install Dir["*"]
     venv = virtualenv_create(libexec/"venv", Formula["python@3.12"].opt_bin/"python3")
     venv.pip_install "flask"
@@ -18,15 +21,19 @@ class Toolbox < Formula
     (bin/"toolbox").write_env_script libexec/"bin/toolbox", {
       TOOLBOX_PYTHON: "#{libexec}/venv/bin/python3",
       TOOLBOX_ROOT:   libexec.to_s,
+      TOOLBOX_PORT:   port,
     }
   end
 
   def caveats
+    port = ENV["TOOLBOX_PORT"] || "9053"
     <<~EOS
       Toolbox 已安装！
 
         运行:  toolbox
-        访问:  http://localhost:5001
+        访问:  http://localhost:#{port}
+
+      端口 #{port} (安装时可用 TOOLBOX_PORT=xxxx brew install toolbox 自定义)
 
       依赖说明:
         - pandoc 已自动安装 (doc-convert / epub-convert 必需)
