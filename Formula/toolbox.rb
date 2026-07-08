@@ -13,16 +13,32 @@ class Toolbox < Formula
   def install
     port = ENV["TOOLBOX_PORT"] || "9053"
     libexec.install Dir["*"]
-    site = libexec/"site-packages"
-    site.mkpath
-    system Formula["python@3.12"].opt_bin/"python3", "-m", "pip", "install",
-           "--no-cache-dir", "--target", site, "flask", "pillow"
-    (bin/"toolbox").write_env_script libexec/"bin/toolbox", {
-      TOOLBOX_PYTHON: Formula["python@3.12"].opt_bin/"python3",
-      TOOLBOX_ROOT:   libexec.to_s,
-      TOOLBOX_PORT:   port,
-      PYTHONPATH:     site.to_s,
-    }
+    py = Formula["python@3.12"].opt_bin/"python3"
+    (bin/"toolbox").write <<~EOS
+      #!/usr/bin/env bash
+      set -u
+      PY="#{py}"
+      ROOT="#{libexec}"
+      PORT="#{port}"
+      export PYTHONPATH="$ROOT/site-packages"
+      if ! "$PY" -c "import flask" 2>/dev/null; then
+        echo "首次运行，安装 Python 依赖 (flask pillow)..."
+        "$PY" -m pip install --no-cache-dir --target "$ROOT/site-packages" flask pillow \\
+          || { echo "依赖安装失败，请检查网络后重试 toolbox"; exit 1; }
+        echo "依赖安装完成"
+      fi
+      echo "Toolbox 启动中 → http://localhost:${PORT}"
+      "$PY" "$ROOT/home/server.py" &
+      PID=$!
+      for i in $(seq 1 60); do
+        curl -sf "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 && \\
+          { open "http://localhost:${PORT}/" 2>/dev/null || true; } && break
+        sleep 0.5
+      done
+      trap 'kill $PID 2>/dev/null' EXIT INT TERM
+      wait $PID
+    EOS
+    chmod 0755, bin/"toolbox"
   end
 
   def caveats
@@ -33,6 +49,7 @@ class Toolbox < Formula
         运行:  toolbox
         访问:  http://localhost:#{port}
 
+      首次运行会自动安装 Python 依赖 (flask/pillow)，需网络。
       端口 #{port} (安装时可用 TOOLBOX_PORT=xxxx brew install toolbox 自定义)
 
       依赖说明:
