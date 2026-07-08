@@ -1,6 +1,4 @@
 class Toolbox < Formula
-  include Language::Python::Virtualenv
-
   desc "个人工具箱集合 — 文档转换/EPUB/网络检测 (Flask 多工具整合)"
   homepage "https://github.com/yingshu0218/toolbox"
   url "https://github.com/yingshu0218/toolbox/archive/refs/tags/v1.0.0.tar.gz"
@@ -15,11 +13,11 @@ class Toolbox < Formula
   def install
     port = ENV["TOOLBOX_PORT"] || "9053"
     libexec.install Dir["*"]
-    venv = virtualenv_create(libexec/"venv", Formula["python@3.12"].opt_bin/"python3")
-    venv.pip_install "flask"
-    venv.pip_install "pillow"
+    venv = libexec/"venv"
+    system Formula["python@3.12"].opt_bin/"python3", "-m", "venv", venv
+    system venv/"bin/pip", "install", "--no-cache-dir", "flask", "pillow"
     (bin/"toolbox").write_env_script libexec/"bin/toolbox", {
-      TOOLBOX_PYTHON: "#{libexec}/venv/bin/python3",
+      TOOLBOX_PYTHON: venv/"bin/python3",
       TOOLBOX_ROOT:   libexec.to_s,
       TOOLBOX_PORT:   port,
     }
