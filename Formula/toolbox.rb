@@ -13,11 +13,12 @@ class Toolbox < Formula
   def install
     port = ENV["TOOLBOX_PORT"] || "9053"
     libexec.install Dir["*"]
-    py = Formula["python@3.12"].opt_bin/"python3"
+    py = Formula["python@3.12"].opt_bin/"python3.12"
     (bin/"toolbox").write <<~EOS
       #!/usr/bin/env bash
       set -u
       PY="#{py}"
+      command -v "$PY" >/dev/null 2>&1 || PY="python3"
       ROOT="#{libexec}"
       PORT="#{port}"
       export PYTHONPATH="$ROOT/site-packages"
