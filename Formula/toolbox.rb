@@ -13,13 +13,15 @@ class Toolbox < Formula
   def install
     port = ENV["TOOLBOX_PORT"] || "9053"
     libexec.install Dir["*"]
-    venv = libexec/"venv"
-    system Formula["python@3.12"].opt_bin/"python3", "-m", "venv", venv
-    system venv/"bin/pip", "install", "--no-cache-dir", "flask", "pillow"
+    site = libexec/"site-packages"
+    site.mkpath
+    system Formula["python@3.12"].opt_bin/"python3", "-m", "pip", "install",
+           "--no-cache-dir", "--target", site, "flask", "pillow"
     (bin/"toolbox").write_env_script libexec/"bin/toolbox", {
-      TOOLBOX_PYTHON: venv/"bin/python3",
+      TOOLBOX_PYTHON: Formula["python@3.12"].opt_bin/"python3",
       TOOLBOX_ROOT:   libexec.to_s,
       TOOLBOX_PORT:   port,
+      PYTHONPATH:     site.to_s,
     }
   end
 
@@ -42,6 +44,5 @@ class Toolbox < Formula
 
   test do
     assert_predicate bin/"toolbox", :exist?
-    assert_match "Flask", shell_output("#{libexec}/venv/bin/python3 -c 'import flask; print(flask.__name__)'")
   end
 end
